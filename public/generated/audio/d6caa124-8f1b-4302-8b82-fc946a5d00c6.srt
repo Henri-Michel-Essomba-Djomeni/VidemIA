@@ -1,0 +1,36 @@
+1
+00:00:00,100 --> 00:00:04,750
+Pour que l'avion puisse voler, il faut comprendre le principe de la portance.
+
+2
+00:00:04,700 --> 00:00:08,050
+Lorsque l'avion avance, l'air frappe les ailes.
+
+3
+00:00:08,050 --> 00:00:11,825
+Leur forme courbe fait que l'air circule plus vite au-dessus des ailes.
+
+4
+00:00:11,825 --> 00:00:17,287
+Cela crée une zone de basse pression au-dessus, tandis que la pression en dessous reste plus élevée.
+
+5
+00:00:17,287 --> 00:00:21,412
+Cette différence de pression génère la portance, soulevant l'avion.
+
+6
+00:00:21,412 --> 00:00:25,225
+Les moteurs produisent ensuite la poussée en poussant l'air vers le bas.
+
+7
+00:00:25,225 --> 00:00:30,237
+Comme une feuille de papier soulevée par le vent, l'avion flotte grâce à ces principes simples.
+
+8
+00:00:30,237 --> 00:00:34,887
+Ainsi, l'avion survole le ciel en utilisant uniquement la physique de l'air.
+
+9
+00:00:34,887 --> 00:00:38,400
+C'est ainsi que l'avion explore les hauteurs de l'atmosphère.
+

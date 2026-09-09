@@ -1,27 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
-import { generateScript } from "@/lib/pipeline/generateScript";
+import { NextRequest } from "next/server";
 import { generateVoice } from "@/lib/pipeline/generateVoice";
 import { generateSubtitles } from "@/lib/pipeline/generateSubtitles";
 import { renderVideo } from "@/lib/pipeline/renderVideo";
 
-/**
- * Orchestre le pipeline complet :
- * sujet -> script -> voix off -> sous-titres synchronisés -> rendu vidéo
- *
- * Étape suivante du projet : brancher chaque fonction du pipeline
- * (aujourd'hui des stubs) sur les vraies API (LLM, TTS, transcription, Remotion).
- */
-export async function POST(req: NextRequest) {
-  const { topic, style } = await req.json();
+function sseEvent(data: unknown) {
+  return `data: ${JSON.stringify(data)}\n\n`;
+}
 
-  if (!topic) {
-    return NextResponse.json({ error: "Le sujet est requis." }, { status: 400 });
+export async function POST(req: NextRequest) {
+  const { script, style } = await req.json();
+
+  if (!script) {
+    return new Response(sseEvent({ error: "Le script est requis." }), {
+      status: 400,
+      headers: { "Content-Type": "text/event-stream" },
+    });
   }
 
-  const script = await generateScript(topic);
-  const voice = await generateVoice(script);
-  const subtitles = await generateSubtitles(voice);
-  const video = await renderVideo({ script, voice, subtitles, style });
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      const send = (data: unknown) => controller.enqueue(encoder.encode(sseEvent(data)));
 
-  return NextResponse.json({ video });
+      try {
+        send({ step: "voice", percent: 0 });
+        const voice = await generateVoice(script);
+        send({ step: "voice", percent: 100 });
+
+        send({ step: "subtitles", percent: 0 });
+        const subtitles = await generateSubtitles(voice);
+        send({ step: "subtitles", percent: 100 });
+
+        send({ step: "render", percent: 0 });
+        const video = await renderVideo({ script, voice, subtitles, style }, (percent) => {
+          send({ step: "render", percent });
+        });
+
+        send({ done: true, videoUrl: video.videoUrl });
+      } catch (err) {
+        send({ error: err instanceof Error ? err.message : "Erreur inconnue" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+  });
 }

@@ -1,17 +1,13 @@
 import { VoiceResult } from "./generateVoice";
 
-export interface SubtitleWord {
-  word: string;
-  startMs: number;
-  endMs: number;
+export interface SubtitlesResult {
+  srt: string;
 }
 
 /**
- * Transcrit l'audio généré avec horodatage mot-à-mot,
- * pour synchroniser les sous-titres incrustés dans la vidéo.
- * À brancher sur un service de transcription (ex: Whisper).
+ * edge-tts génère déjà les sous-titres synchronisés en même temps que
+ * la voix (voir generateVoice.ts) — cette étape les fait juste transiter.
  */
-export async function generateSubtitles(voice: VoiceResult): Promise<SubtitleWord[]> {
-  // TODO: transcrire voice.audioUrl et renvoyer les mots horodatés
-  return [];
+export async function generateSubtitles(voice: VoiceResult): Promise<SubtitlesResult> {
+  return { srt: voice.srt };
 }

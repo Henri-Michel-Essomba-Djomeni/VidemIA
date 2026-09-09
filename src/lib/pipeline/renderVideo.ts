@@ -1,23 +1,58 @@
+import path from "path";
+import { promises as fs } from "fs";
+import { randomUUID } from "crypto";
+import { bundle } from "@remotion/bundler";
+import { renderMedia, selectComposition } from "@remotion/renderer";
 import { VoiceResult } from "./generateVoice";
-import { SubtitleWord } from "./generateSubtitles";
+import { SubtitlesResult } from "./generateSubtitles";
+import { parseSrt } from "../subtitles/parseSrt";
 
 export interface RenderVideoParams {
   script: string;
   voice: VoiceResult;
-  subtitles: SubtitleWord[];
+  subtitles: SubtitlesResult;
   style?: string;
+  showWatermark?: boolean;
 }
 
 export interface RenderVideoResult {
   videoUrl: string;
 }
 
-/**
- * Assemble le template visuel choisi + la voix off + les sous-titres,
- * puis lance le rendu final via Remotion (voir src/remotion/).
- */
-export async function renderVideo(params: RenderVideoParams): Promise<RenderVideoResult> {
-  // TODO: appeler le renderer Remotion (@remotion/renderer) avec la composition
-  // correspondant à params.style, en lui passant voice + subtitles en props.
-  return { videoUrl: "" };
+const OUTPUT_DIR = path.join(process.cwd(), "public", "generated", "video");
+const ENTRY_POINT = path.join(process.cwd(), "src", "remotion", "index.ts");
+
+export async function renderVideo(
+  params: RenderVideoParams,
+  onProgress?: (percent: number) => void
+): Promise<RenderVideoResult> {
+  const compositionId = params.style ?? "style-energy";
+  const bundleLocation = await bundle({ entryPoint: ENTRY_POINT });
+
+  const inputProps = {
+    script: params.script,
+    audioSrc: params.voice.audioUrl,
+    captions: parseSrt(params.subtitles.srt),
+    watermarkText: "VidemIA AI \u2014 Powered par nOX-00",
+    showWatermark: params.showWatermark ?? true,
+  };
+
+  const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
+
+  await fs.mkdir(OUTPUT_DIR, { recursive: true });
+  const fileName = `${randomUUID()}.mp4`;
+  const outputLocation = path.join(OUTPUT_DIR, fileName);
+
+  await renderMedia({
+    composition,
+    serveUrl: bundleLocation,
+    codec: "h264",
+    outputLocation,
+    inputProps,
+    onProgress: ({ progress }) => {
+      onProgress?.(Math.round(progress * 100));
+    },
+  });
+
+  return { videoUrl: `/generated/video/${fileName}` };
 }

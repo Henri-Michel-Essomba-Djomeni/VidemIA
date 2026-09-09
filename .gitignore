@@ -7,3 +7,6 @@ out/
 .DS_Store
 out-*.mp4
 remotion.bundle/
+prisma/dev.db
+prisma/dev.db-journal
+*.db
