@@ -6,6 +6,7 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import { VoiceResult } from "./generateVoice";
 import { SubtitlesResult } from "./generateSubtitles";
 import { parseSrt } from "../subtitles/parseSrt";
+import type { Theme } from "./classifyTheme";
 
 export interface RenderVideoParams {
   script: string;
@@ -13,6 +14,7 @@ export interface RenderVideoParams {
   subtitles: SubtitlesResult;
   style?: string;
   showWatermark?: boolean;
+  theme?: Theme;
 }
 
 export interface RenderVideoResult {
@@ -35,6 +37,7 @@ export async function renderVideo(
     captions: parseSrt(params.subtitles.srt),
     watermarkText: "VidemIA AI \u2014 Powered par nOX-00",
     showWatermark: params.showWatermark ?? true,
+    theme: params.theme ?? "sphere",
   };
 
   const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
@@ -49,6 +52,12 @@ export async function renderVideo(
     codec: "h264",
     outputLocation,
     inputProps,
+    metadata: {
+      title: "VidemIA AI",
+      artist: "nOX-00",
+      comment: "Powered by nOX-00 — VidemIA AI",
+      copyright: "nOX-00",
+    },
     onProgress: ({ progress }) => {
       onProgress?.(Math.round(progress * 100));
     },

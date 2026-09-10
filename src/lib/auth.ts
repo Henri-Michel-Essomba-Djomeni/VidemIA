@@ -33,6 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: "jwt" },
   pages: { signIn: "/connexion" },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) token.id = user.id;
@@ -43,4 +44,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
+  events: {
+    async createUser({ user }) {
+      // S'applique aux comptes créés via Google/GitHub (l'adaptateur Prisma
+      // gère déjà le défaut de 1 crédit grâce au schéma, ceci est une sécurité explicite).
+      if (user.id) {
+        await prisma.user.update({ where: { id: user.id }, data: { credits: 1 } }).catch(() => {});
+      }
+    },
+  },
+
 });

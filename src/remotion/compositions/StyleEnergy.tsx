@@ -1,6 +1,7 @@
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { EnergyScene } from "./three/EnergyScene";
 import { Caption } from "../../lib/subtitles/parseSrt";
+import type { Theme } from "../../lib/pipeline/classifyTheme";
 
 export interface StyleEnergyProps {
   script: string;
@@ -8,6 +9,7 @@ export interface StyleEnergyProps {
   captions: Caption[];
   watermarkText: string;
   showWatermark: boolean;
+  theme: Theme;
 }
 
 export const StyleEnergy: React.FC<StyleEnergyProps> = ({
@@ -16,6 +18,7 @@ export const StyleEnergy: React.FC<StyleEnergyProps> = ({
   captions,
   watermarkText,
   showWatermark,
+  theme,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -28,7 +31,7 @@ export const StyleEnergy: React.FC<StyleEnergyProps> = ({
     <AbsoluteFill style={{ backgroundColor: "#000000" }}>
       {audioSrc && <Audio src={staticFile(audioSrc.replace(/^\//, ""))} />}
 
-      <EnergyScene />
+      <EnergyScene theme={theme} />
 
       <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 260 }}>
         <p style={{ color: "white", fontSize: 42, fontWeight: 700, textAlign: "center", maxWidth: "80%", fontFamily: "sans-serif" }}>

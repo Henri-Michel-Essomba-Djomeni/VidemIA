@@ -1,18 +1,17 @@
 import { ThreeCanvas } from "@remotion/three";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { useVideoConfig } from "remotion";
 import { EnergyParticles } from "./EnergyParticles";
+import type { Theme } from "../../../lib/pipeline/classifyTheme";
 
-export const EnergyScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
-  const t = frame / fps;
-  const rotationY = t * 0.15;
+export interface EnergySceneProps {
+  theme: Theme;
+}
 
+export const EnergyScene: React.FC<EnergySceneProps> = ({ theme }) => {
+  const { width, height } = useVideoConfig();
   return (
     <ThreeCanvas width={width} height={height}>
-      <group rotation={[0, rotationY, 0]}>
-        <EnergyParticles />
-      </group>
+      <EnergyParticles theme={theme} />
     </ThreeCanvas>
   );
 };

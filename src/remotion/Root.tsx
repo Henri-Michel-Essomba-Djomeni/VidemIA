@@ -16,6 +16,7 @@ export const RemotionRoot: React.FC = () => {
         captions: [],
         watermarkText: "VidemIA AI \u2014 Powered by nOX-00",
         showWatermark: true,
+        theme: "sphere",
       }}
       calculateMetadata={async ({ props }: any) => {
         const lastCaptionEnd = props.captions?.length

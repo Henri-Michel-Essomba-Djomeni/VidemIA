@@ -39,11 +39,20 @@ function AppPageContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [progress, setProgress] = useState({ voice: 0, subtitles: 0, render: 0 });
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [theme, setTheme] = useState<string>("sphere");
 
   useEffect(() => {
     const t = searchParams.get("topic");
     if (t) setTopic(t);
   }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/credits")
+      .then((res) => res.json())
+      .then((data) => setCredits(data.credits))
+      .catch(() => {});
+  }, []);
 
   const activity =
     stage === "generatingVideo" || (stage === "reviewing" && script === "Génération du script...")
@@ -68,6 +77,7 @@ function AppPageContent() {
       }
       const data = await res.json();
       setScript(data.script);
+      setTheme(data.theme);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Erreur inconnue");
       setStage("error");
@@ -83,7 +93,7 @@ function AppPageContent() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ script }),
+        body: JSON.stringify({ script, theme }),
       });
 
       if (!res.body) throw new Error("Pas de flux de réponse.");
@@ -105,6 +115,11 @@ function AppPageContent() {
           if (!line.startsWith("data:")) continue;
           const payload = JSON.parse(line.slice(5).trim());
 
+          if (payload.error === "NO_CREDITS") {
+            setStage("error");
+            setErrorMessage("NO_CREDITS");
+            return;
+          }
           if (payload.error) {
             throw new Error(payload.error);
           }
@@ -119,6 +134,7 @@ function AppPageContent() {
               body: JSON.stringify({ topic, videoUrl: payload.videoUrl }),
             }).catch(() => {});
             setStage("done");
+            setCredits((c) => (c !== null ? c - 1 : c));
           }
         }
       }
@@ -139,6 +155,8 @@ function AppPageContent() {
         </Link>
         <p className="logo-tagline">Powered by nOX-00</p>
       </div>
+
+      {credits !== null && <p className="credits-badge" style={{ marginBottom: 12 }}>{credits} vidéo{credits !== 1 ? "s" : ""} gratuite{credits !== 1 ? "s" : ""} restante{credits !== 1 ? "s" : ""}</p>}
 
       <div className="workspace-card">
         <div className="stepper">
@@ -227,7 +245,15 @@ function AppPageContent() {
           </>
         )}
 
-        {stage === "error" && <p className="error-text">{errorMessage}</p>}
+        {stage === "error" && errorMessage === "NO_CREDITS" && (
+          <div className="upsell-box">
+            <p>Tu as utilisé ta vidéo gratuite. Passe au premium pour continuer à créer.</p>
+            <button className="button button-primary" disabled title="Bientôt disponible">
+              Passer au premium
+            </button>
+          </div>
+        )}
+        {stage === "error" && errorMessage !== "NO_CREDITS" && <p className="error-text">{errorMessage}</p>}
       
         {stage === "done" && videoUrl && (
           <div className="video-frame" style={{ margin: "0 auto" }}>
