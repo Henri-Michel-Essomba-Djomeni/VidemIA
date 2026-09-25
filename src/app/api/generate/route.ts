@@ -25,6 +25,14 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/event-stream" },
     });
   }
+  // Seuls les comptes email/mot de passe ont besoin de vérifier leur email
+  // (Google/GitHub garantissent déjà une adresse réelle).
+  if (user.passwordHash && !user.emailVerified) {
+    return new Response(sseEvent({ error: "EMAIL_NOT_VERIFIED" }), {
+      status: 403,
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
 
   const { script, style, theme } = await req.json();
   if (!script) {

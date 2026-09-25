@@ -65,6 +65,15 @@ export default function LandingPage() {
 
       <footer className="site-footer">
         <p>VidemIA — Powered by nOX-00</p>
+        <p style={{ marginTop: 8 }}>
+          <Link href="/mentions-legales" style={{ color: "inherit" }}>Mentions légales</Link>
+          {" · "}
+          <Link href="/cgv" style={{ color: "inherit" }}>CGV</Link>
+          {" · "}
+          <Link href="/confidentialite" style={{ color: "inherit" }}>Confidentialité</Link>
+          {" · "}
+          <Link href="/remboursement" style={{ color: "inherit" }}>Remboursement</Link>
+        </p>
       </footer>
     </>
   );

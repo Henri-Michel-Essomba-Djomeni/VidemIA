@@ -1,5 +1,13 @@
-import { Composition } from "remotion";
-import { StyleEnergy } from "./compositions/StyleEnergy";
+import { Composition, CalculateMetadataFunction } from "remotion";
+import { StyleEnergy, StyleEnergyProps } from "./compositions/StyleEnergy";
+
+const calculateMetadata: CalculateMetadataFunction<StyleEnergyProps> = async ({ props }) => {
+  const lastCaptionEnd = props.captions?.length
+    ? Math.max(...props.captions.map((c) => c.endMs))
+    : 30 * 1000;
+  const durationInFrames = Math.ceil(((lastCaptionEnd + 500) / 1000) * 30);
+  return { durationInFrames };
+};
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -18,13 +26,7 @@ export const RemotionRoot: React.FC = () => {
         showWatermark: true,
         theme: "sphere",
       }}
-      calculateMetadata={async ({ props }: any) => {
-        const lastCaptionEnd = props.captions?.length
-          ? Math.max(...props.captions.map((c: any) => c.endMs))
-          : 30 * 1000;
-        const durationInFrames = Math.ceil(((lastCaptionEnd + 500) / 1000) * 30);
-        return { durationInFrames };
-      }}
+      calculateMetadata={calculateMetadata}
     />
   );
 };

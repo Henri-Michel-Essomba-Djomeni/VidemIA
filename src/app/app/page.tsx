@@ -6,8 +6,12 @@ import { Sidebar } from "@/components/Sidebar";
 import { ParticleBackground } from "@/components/ParticleBackground";
 //import { addHistoryEntry } from "@/lib/history";
 import Link from "next/link";
+//import { useEffect } from "react"; // si pas déjà importé
+import { PaymentModal } from "@/components/PaymentModal";
 
 type Stage = "topic" | "reviewing" | "generatingVideo" | "done" | "error";
+
+const CREDIT_PACK_LABEL = "5 vidéos, 2000 XAF";
 
 const STEPS: { key: "topic" | "script" | "video"; label: string }[] = [
   { key: "topic", label: "Sujet" },
@@ -41,6 +45,8 @@ function AppPageContent() {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [theme, setTheme] = useState<string>("sphere");
+  const [showPayment, setShowPayment] = useState(false);
+  
 
   useEffect(() => {
     const t = searchParams.get("topic");
@@ -54,12 +60,40 @@ function AppPageContent() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus === "success") {
+      fetch("/api/credits").then((res) => res.json()).then((data) => setCredits(data.credits));
+    }
+  }, [searchParams]);
+
   const activity =
     stage === "generatingVideo" || (stage === "reviewing" && script === "Génération du script...")
       ? "working"
       : stage === "done"
       ? "celebrating"
       : "idle";
+
+  async function handleUpgrade() {
+    const phone = window.prompt("Ton numéro Mobile Money (ex: +237690000000) :");
+    if (!phone) return;
+
+    const method = window.confirm("Clique OK pour Orange Money, Annuler pour MTN MoMo")
+      ? "orange_money"
+      : "mtn_momo";
+
+    const res = await fetch("/api/camerpay/initiate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, method }),
+    });
+    const data = await res.json();
+    if (data.link) {
+      window.location.href = data.link;
+    } else {
+      alert(data.error || "Erreur lors du démarrage du paiement.");
+    }
+  }
 
   async function handleGenerateScript() {
     setStage("reviewing");
@@ -114,6 +148,12 @@ function AppPageContent() {
           const line = evt.trim();
           if (!line.startsWith("data:")) continue;
           const payload = JSON.parse(line.slice(5).trim());
+
+          if (payload.error === "EMAIL_NOT_VERIFIED") {
+            setStage("error");
+            setErrorMessage("EMAIL_NOT_VERIFIED");
+            return;
+          }
 
           if (payload.error === "NO_CREDITS") {
             setStage("error");
@@ -245,11 +285,26 @@ function AppPageContent() {
           </>
         )}
 
+        {stage === "error" && errorMessage === "EMAIL_NOT_VERIFIED" && (
+          <div className="upsell-box">
+            <p>Vérifie ton adresse email pour débloquer ta vidéo gratuite.</p>
+            <button
+              className="button button-primary"
+              onClick={async () => {
+                await fetch("/api/resend-verification", { method: "POST" });
+                alert("Email de vérification renvoyé !");
+              }}
+            >
+              Renvoyer l'email de vérification
+            </button>
+          </div>
+        )}
+
         {stage === "error" && errorMessage === "NO_CREDITS" && (
           <div className="upsell-box">
             <p>Tu as utilisé ta vidéo gratuite. Passe au premium pour continuer à créer.</p>
-            <button className="button button-primary" disabled title="Bientôt disponible">
-              Passer au premium
+            <button className="button button-primary" onClick={() => setShowPayment(true)}>
+              Passer au premium ({CREDIT_PACK_LABEL})
             </button>
           </div>
         )}
@@ -261,6 +316,11 @@ function AppPageContent() {
           </div>
         )}
       </div>
+
+      {showPayment && (
+        <PaymentModal onClose={() => setShowPayment(false)} packLabel={CREDIT_PACK_LABEL} />
+      )}
+
     </main>
   );
 }

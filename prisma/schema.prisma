@@ -18,6 +18,19 @@ model User {
   accounts      Account[]
   sessions      Session[]
   videos        Video[]
+  payments      Payment[]
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  userId         String
+  txRef          String   @unique
+  amount         Int
+  currency       String
+  status         String   @default("pending")
+  creditsGranted Int
+  createdAt      DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
